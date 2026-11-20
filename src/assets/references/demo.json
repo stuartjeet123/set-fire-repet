@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "songId": "demo",
+  "audioFile": "/demo.mp3",
+  "audioOffsetSeconds": 0,
+  "tempoBpm": 60,
+  "notes": [
+    {"start": 1, "end": 3, "midi": 60, "frequencyHz": 261.6256, "label": "C4", "confidence": 1},
+    {"start": 3.5, "end": 5.5, "midi": 62, "frequencyHz": 293.6648, "label": "D4", "confidence": 1},
+    {"start": 6, "end": 8, "midi": 64, "frequencyHz": 329.6276, "label": "E4", "confidence": 1},
+    {"start": 8.5, "end": 10.5, "midi": 67, "frequencyHz": 391.9954, "label": "G4", "confidence": 1}
+  ]
+}

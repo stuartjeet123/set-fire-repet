@@ -1,0 +1,2 @@
+# Add timestamped lyrics, one line at a time.
+# Format: MM:SS lyric text
