@@ -40,3 +40,19 @@ to deploy. Create a stack using the **Git repository** build method and set:
 Deploy the stack, then open the Docker host's address on the selected port.
 Browsers only allow microphone access from secure contexts: use `localhost` for
 local access, or HTTPS when accessing the stack from another machine.
+
+### Nginx Proxy Manager
+
+The app's default published port is `8080` (or the value of `PORT`). In Nginx
+Proxy Manager, add a Proxy Host with:
+
+- **Domain name:** a hostname whose DNS points to the Docker host
+- **Scheme:** `http`
+- **Forward hostname/IP:** the Docker host's reachable IP address
+- **Forward port:** `8080` (or the value of `PORT`)
+
+Do not use `localhost` as the forward hostname when Nginx Proxy Manager runs in
+its own container; that would point back to Nginx Proxy Manager itself. On the
+Proxy Host's **SSL** tab, request or select a certificate and enable **Force
+SSL**. Make sure DNS and the firewall route ports 80 and 443 to Nginx Proxy
+Manager, then open the app using `https://your-domain`.

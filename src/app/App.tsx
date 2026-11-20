@@ -114,9 +114,10 @@ export default function App() {
     try {
       setError("");
       engine.current ??= new AudioEngine();
-      await startMicrophone();
-      await engine.current.connectPlayback(player);
-      await player.play();
+      const playbackConnection = engine.current.connectPlayback(player);
+      const playbackStart = player.play();
+      const microphoneStart = startMicrophone();
+      await Promise.all([playbackConnection, playbackStart, microphoneStart]);
     } catch (cause) {
       player.pause();
       stopMicrophone();

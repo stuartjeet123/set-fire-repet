@@ -11,23 +11,33 @@ export class AudioEngine {
   private mutedSink?: GainNode;
   private source?: MediaElementAudioSourceNode;
   private disposed = false;
+  private microphoneGeneration = 0;
 
   async startMicrophone(onPitch: (hz: number | null, clarity: number, timestamp: number) => void) {
     if (!globalThis.isSecureContext) {
       throw new Error("Microphone access requires HTTPS. Open this app on localhost or use an HTTPS address.");
     }
     if (!navigator.mediaDevices?.getUserMedia) throw new Error("Microphone capture is unsupported in this browser");
-    this.mic = await navigator.mediaDevices.getUserMedia({
+    const generation = ++this.microphoneGeneration;
+    const isCurrentStart = () => !this.disposed && generation === this.microphoneGeneration;
+    const mic = await navigator.mediaDevices.getUserMedia({
       audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: false, channelCount: 1 },
       video: false,
     });
+    if (!isCurrentStart()) {
+      mic.getTracks().forEach((track) => track.stop());
+      throw new Error("Microphone startup was cancelled.");
+    }
+    this.mic = mic;
     await this.context.resume();
+    if (!isCurrentStart()) throw new Error("Microphone startup was cancelled.");
     try {
       await this.context.audioWorklet.addModule(captureWorkletUrl);
     } catch (cause) {
       const detail = cause instanceof Error ? `${cause.name}: ${cause.message}` : String(cause);
       throw new Error(`Could not load microphone audio worklet from ${captureWorkletUrl}: ${detail}`, { cause });
     }
+    if (!isCurrentStart()) throw new Error("Microphone startup was cancelled.");
     this.micNode = this.context.createMediaStreamSource(this.mic);
     this.worklet = new AudioWorkletNode(this.context, "capture-frame");
     this.worklet.port.onmessage = (event: MessageEvent<{ samples: ArrayBuffer; timestamp: number }>) => {
@@ -44,13 +54,16 @@ export class AudioEngine {
     this.mutedSink.connect(this.context.destination);
   }
 
-  async connectPlayback(audio: HTMLAudioElement) {
-    await this.context.resume();
-    this.source ??= this.context.createMediaElementSource(audio);
-    this.source.connect(this.context.destination);
+  connectPlayback(audio: HTMLAudioElement) {
+    if (!this.source) {
+      this.source = this.context.createMediaElementSource(audio);
+      this.source.connect(this.context.destination);
+    }
+    return this.context.resume();
   }
 
   stopMicrophone() {
+    this.microphoneGeneration += 1;
     this.pitchSmoother.reset();
     this.worklet?.disconnect();
     this.mutedSink?.disconnect();
