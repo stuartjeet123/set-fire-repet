@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import "../app/styles.css";
 import { AudioEngine } from "../audio/AudioEngine";
-import { getTargetNote, matchPitch } from "../features/matching/matching";
+import { getTargetNote, matchPitchToAMinorScale } from "../features/matching/matching";
 import { hzToMidi, midiToPitchClass } from "../features/pitch/pitch";
 import { createAminorReference } from "../features/reference/midiReference";
 import { validateReference, type ReferenceData } from "../features/reference/reference";
@@ -74,7 +74,7 @@ export default function App() {
     await engine.current.startMicrophone((hz, clarity, timestamp) => {
       if (!reference || !audio.current) return;
       const target = getTargetNote(reference.notes, audio.current.currentTime);
-      const match = matchPitch(hz, clarity, target);
+      const match = matchPitchToAMinorScale(hz, clarity);
       const midi = hz === null ? null : hzToMidi(hz);
       if (hz !== null && target) frameCount.current += 1;
       setFrame({
@@ -158,23 +158,22 @@ export default function App() {
   }
 
   const targetNote = reference ? getTargetNote(reference.notes, currentTime) : null;
-  const targetMidi = targetNote?.midi ?? null;
   const hasPitch = micStatus === "Active" && frame.hz !== null && frame.cents !== null;
-  const targetName = targetMidi === null ? "—" : midiToPitchClass(targetMidi);
+  const targetName = hasPitch && frame.targetMidi !== null ? midiToPitchClass(frame.targetMidi) : "A";
   const deviation = hasPitch ? frame.cents : null;
   const markerPosition = deviation === null
     ? 50
     : 50 - Math.max(-METER_RANGE_CENTS, Math.min(METER_RANGE_CENTS, deviation)) / (METER_RANGE_CENTS * 2) * 100;
   const guidance = !reference
     ? "Loading song notes…"
-    : targetMidi === null
-      ? "No chord target right now"
-      : micStatus !== "Active"
-        ? "Press play to check the chord root"
-        : deviation === null
-          ? "Sing a steady note"
-          : Math.abs(deviation) <= 10
-            ? "IN TUNE — hold this note"
+    : micStatus !== "Active"
+      ? "Press play to check the A minor scale"
+      : deviation === null
+        ? "Sing a steady note in A minor"
+        : Math.abs(deviation) <= 10
+          ? "IN KEY — hold this note"
+          : Math.abs(deviation) > 50
+            ? "OUT OF A MINOR — sing a scale note"
             : deviation < 0
               ? "TOO LOW — sing a little higher"
               : "TOO HIGH — sing a little lower";
@@ -194,14 +193,14 @@ export default function App() {
           <div className="song-heading">
             <p className="eyebrow">NOW PRACTICING</p>
             <h1>Set Fire to the Rain</h1>
-            <p className="song-subtitle">Chord-root target · octave independent · updates at each bar</p>
+            <p className="song-subtitle">Sing any A natural minor note · A B C D E F G</p>
           </div>
 
           <div className="accuracy-display">
             <div className="target-note">
-              <span className="target-label">{targetNote ? `BAR ${targetNote.barNumber} · ${targetNote.chordName}` : "CURRENT CHORD ROOT"}</span>
+              <span className="target-label">{targetNote ? `A MINOR · BAR ${targetNote.barNumber} · ${targetNote.chordName}` : "A MINOR SCALE"}</span>
               <strong>{targetName}</strong>
-              <span className="target-frequency">{targetMidi === null ? "—" : "ROOT PITCH CLASS · ANY OCTAVE"}</span>
+              <span className="target-frequency">SCALE NOTE · ANY OCTAVE</span>
             </div>
 
             <div className={`accuracy-meter meter-${meterTone}`} role="img" aria-label={deviation === null ? "Pitch accuracy level waiting for microphone" : `Pitch is ${Math.abs(Math.round(deviation))} cents ${deviation < 0 ? "too low" : deviation > 0 ? "too high" : "in tune"}`}>
