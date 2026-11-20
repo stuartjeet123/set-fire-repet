@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type CSSProperties } from "react";
 import "../app/styles.css";
 import { AudioEngine } from "../audio/AudioEngine";
 import { getTargetNote, matchPitch } from "../features/matching/matching";
-import { hzToMidi, midiToLabel } from "../features/pitch/pitch";
+import { hzToMidi, midiToPitchClass } from "../features/pitch/pitch";
 import { createAminorReference } from "../features/reference/midiReference";
 import { validateReference, type ReferenceData } from "../features/reference/reference";
 import { SessionRepository, type SavedSession } from "../features/sessions/persistence";
@@ -160,12 +160,7 @@ export default function App() {
   const targetNote = reference ? getTargetNote(reference.notes, currentTime) : null;
   const targetMidi = targetNote?.midi ?? null;
   const hasPitch = micStatus === "Active" && frame.hz !== null && frame.cents !== null;
-  const displayedTargetMidi = targetMidi === null
-    ? null
-    : hasPitch && frame.midi !== null
-      ? targetMidi + 12 * Math.round((frame.midi - targetMidi) / 12)
-      : targetMidi;
-  const targetName = displayedTargetMidi === null ? "—" : midiToLabel(displayedTargetMidi);
+  const targetName = targetMidi === null ? "—" : midiToPitchClass(targetMidi);
   const deviation = hasPitch ? frame.cents : null;
   const markerPosition = deviation === null
     ? 50
@@ -199,14 +194,14 @@ export default function App() {
           <div className="song-heading">
             <p className="eyebrow">NOW PRACTICING</p>
             <h1>Set Fire to the Rain</h1>
-            <p className="song-subtitle">Chord-root target · updates at each bar</p>
+            <p className="song-subtitle">Chord-root target · octave independent · updates at each bar</p>
           </div>
 
           <div className="accuracy-display">
             <div className="target-note">
               <span className="target-label">{targetNote ? `BAR ${targetNote.barNumber} · ${targetNote.chordName}` : "CURRENT CHORD ROOT"}</span>
               <strong>{targetName}</strong>
-              <span className="target-frequency">{displayedTargetMidi === null ? "—" : `ROOT TONE · ${(440 * 2 ** ((displayedTargetMidi - 69) / 12)).toFixed(1)} Hz`}</span>
+              <span className="target-frequency">{targetMidi === null ? "—" : "ROOT PITCH CLASS · ANY OCTAVE"}</span>
             </div>
 
             <div className={`accuracy-meter meter-${meterTone}`} role="img" aria-label={deviation === null ? "Pitch accuracy level waiting for microphone" : `Pitch is ${Math.abs(Math.round(deviation))} cents ${deviation < 0 ? "too low" : deviation > 0 ? "too high" : "in tune"}`}>

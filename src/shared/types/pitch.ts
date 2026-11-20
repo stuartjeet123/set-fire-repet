@@ -1,4 +1,4 @@
-export type MatchStatus = "NO_TARGET" | "WAITING" | "PERFECT" | "CLOSE" | "MISS" | "OCTAVE_ERROR";
+export type MatchStatus = "NO_TARGET" | "WAITING" | "PERFECT" | "CLOSE" | "MISS";
 
 export interface PitchFrame {
   hz: number | null;
