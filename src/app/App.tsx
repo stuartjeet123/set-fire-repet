@@ -11,6 +11,20 @@ import { CONFIG } from "../shared/config";
 
 const METER_RANGE_CENTS = 50;
 
+function createSessionId() {
+  const browserCrypto = globalThis.crypto;
+  if (typeof browserCrypto.randomUUID === "function") return browserCrypto.randomUUID();
+  if (typeof browserCrypto.getRandomValues !== "function") {
+    throw new Error("Secure random ID generation is unavailable in this browser.");
+  }
+
+  const bytes = browserCrypto.getRandomValues(new Uint8Array(16));
+  bytes[6] = (bytes[6] & 0x0f) | 0x40;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+  const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+}
+
 function formatTime(seconds: number) {
   const safe = Math.max(0, Math.floor(seconds || 0));
   return `${Math.floor(safe / 60)}:${String(safe % 60).padStart(2, "0")}`;
@@ -32,7 +46,7 @@ export default function App() {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const startedAt = useRef(Date.now());
-  const sessionId = useRef(crypto.randomUUID());
+  const [sessionId] = useState(createSessionId);
   const savedOnce = useRef(false);
 
   useEffect(() => {
@@ -123,7 +137,7 @@ export default function App() {
     if (savedOnce.current) return;
     savedOnce.current = true;
     const session: SavedSession = {
-      id: sessionId.current,
+      id: sessionId,
       userId: CONFIG.userId,
       songId: "set-fire-to-the-rain-a-minor",
       referenceVersion: 1,

@@ -13,7 +13,10 @@ export class AudioEngine {
   private disposed = false;
 
   async startMicrophone(onPitch: (hz: number | null, clarity: number, timestamp: number) => void) {
-    if (!navigator.mediaDevices?.getUserMedia) throw new Error("Microphone capture is unsupported");
+    if (!globalThis.isSecureContext) {
+      throw new Error("Microphone access requires HTTPS. Open this app on localhost or use an HTTPS address.");
+    }
+    if (!navigator.mediaDevices?.getUserMedia) throw new Error("Microphone capture is unsupported in this browser");
     this.mic = await navigator.mediaDevices.getUserMedia({
       audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: false, channelCount: 1 },
       video: false,
