@@ -159,8 +159,13 @@ export default function App() {
 
   const targetNote = reference ? getTargetNote(reference.notes, currentTime) : null;
   const targetMidi = targetNote?.midi ?? null;
-  const targetName = targetMidi === null ? "—" : midiToLabel(targetMidi);
   const hasPitch = micStatus === "Active" && frame.hz !== null && frame.cents !== null;
+  const displayedTargetMidi = targetMidi === null
+    ? null
+    : hasPitch && frame.midi !== null
+      ? targetMidi + 12 * Math.round((frame.midi - targetMidi) / 12)
+      : targetMidi;
+  const targetName = displayedTargetMidi === null ? "—" : midiToLabel(displayedTargetMidi);
   const deviation = hasPitch ? frame.cents : null;
   const markerPosition = deviation === null
     ? 50
@@ -201,7 +206,7 @@ export default function App() {
             <div className="target-note">
               <span className="target-label">{targetNote ? `BAR ${targetNote.barNumber} · ${targetNote.chordName}` : "CURRENT CHORD ROOT"}</span>
               <strong>{targetName}</strong>
-              <span className="target-frequency">{targetMidi === null ? "—" : `ROOT TONE · ${(440 * 2 ** ((targetMidi - 69) / 12)).toFixed(1)} Hz`}</span>
+              <span className="target-frequency">{displayedTargetMidi === null ? "—" : `ROOT TONE · ${(440 * 2 ** ((displayedTargetMidi - 69) / 12)).toFixed(1)} Hz`}</span>
             </div>
 
             <div className={`accuracy-meter meter-${meterTone}`} role="img" aria-label={deviation === null ? "Pitch accuracy level waiting for microphone" : `Pitch is ${Math.abs(Math.round(deviation))} cents ${deviation < 0 ? "too low" : deviation > 0 ? "too high" : "in tune"}`}>

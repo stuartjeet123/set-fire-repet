@@ -17,8 +17,9 @@ describe("pitch matching feedback", () => {
     expect(matchPitch(277.1826, 0.99, target).status).toBe("MISS");
   });
 
-  it("marks the right pitch class in the wrong octave separately", () => {
-    expect(matchPitch(523.2511, 0.99, target).status).toBe("OCTAVE_ERROR");
+  it("matches the target pitch class in higher or lower octaves", () => {
+    expect(matchPitch(130.8128, 0.99, target)).toMatchObject({ status: "PERFECT", cents: expect.closeTo(0, 1) });
+    expect(matchPitch(523.2511, 0.99, target)).toMatchObject({ status: "PERFECT", cents: expect.closeTo(0, 1) });
   });
 
   it("does not score low-confidence input", () => {
